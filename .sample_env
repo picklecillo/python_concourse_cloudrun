@@ -1,0 +1,7 @@
+export GCP_PROJECT_ID=
+export GCP_SA=
+export GCP_SA_PATH=
+export GCP_IMAGE_NAME=
+export GCP_SERVICE_NAME=hello-world-python
+export GCP_REGION=us-central1
+export GCR_PLATFORM=managed

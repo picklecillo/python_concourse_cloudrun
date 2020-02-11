@@ -1,0 +1,10 @@
+.env
+.env_vars
+*.egg-info
+.pytest_cache
+__pycache__
+htmlcov
+.coverage
+/*.json
+keys/**/*key*
+dependencies
