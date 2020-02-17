@@ -125,3 +125,15 @@ curl -SH "Content-Type: application/json" --request POST  \
 # Unpause from UI
 ```
 
+### For the build job
+
+1. Setup [gitcrypt](https://github.com/AGWA/git-crypt) for a new private repo. (Or this one if its private)
+    * [Medium tutorial](https://medium.com/@sumitkum/securing-your-secret-keys-with-git-crypt-b2fa6ffed1a6)
+2. Store service account in it.
+
+---
+
+4. Concourse build job
+```yaml
+
+```
