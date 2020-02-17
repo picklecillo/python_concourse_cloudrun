@@ -14,8 +14,25 @@ def test_hello_world(client, word, expected):
     response = client.get(url)
     assert expected in str(response.data)
 
-def test_ticket_create(client):
+@pytest.mark.parametrize('ticket_json, expected_data, expected_status', [
+    [
+        json_loader('create_ticket.json'), {"result": "fake result", "status": "ok"}, 201
+    ],
+    [
+        json_loader('create_ticket_missing_title.json'), {"error":"{'title': ['Missing data for required field.']}"}, 406
+    ],
+])
+def test_ticket_create(client, ticket_json, expected_data, expected_status):
     url = '/ticket/create'
-    response = client.post(url)
-    assert response.status_code is 201
+    response = client.post(
+        url,
+        json=ticket_json,
+        headers={'Content': 'application/json'}
+    )
+
     assert response.content_type == 'application/json'
+    assert response.status_code == expected_status
+    print(response.json)
+    response_data = json.loads(response.json)
+    for key in response_data.keys():
+        assert response_data[key] == expected_data[key]
