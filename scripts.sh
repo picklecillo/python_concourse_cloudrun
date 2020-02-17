@@ -33,7 +33,7 @@ case $1 in
   ;;
 
   run_app_local)
-    FLASK_APP=app/app.py python -m flask run
+    FLASK_APP=app/routes.py python -m flask run
   ;;
 
   # Local with containers
