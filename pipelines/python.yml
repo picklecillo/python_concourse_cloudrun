@@ -1,0 +1,176 @@
+resource_types:
+- name: git-branch-heads
+  type: docker-image
+  source: {repository: vito/git-branch-heads-resource}
+
+resources:
+  - name: hello-world-python-repo
+    type: git-branch-heads
+    source:
+      uri: git@github.com:picklecillo/python_concourse_cloudrun.git
+      branches: [master]
+      private_key: ((ssh_private_key))
+
+jobs:
+- name: tests-and-lint
+  plan:
+    - get: hello-world-python-repo
+      trigger: true
+    - task: setup
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: python
+            tag: 3.6-alpine
+        run:
+          dir: hello-world-python-repo
+          path: /bin/sh
+          args:
+            - ./scripts.sh
+            - init_workspace
+            - dev
+        inputs:
+          - name: hello-world-python-repo
+        outputs:
+          - name: hello-world-python-repo
+
+    - task: lint
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: python
+            tag: 3.6-alpine
+        run:
+          dir: hello-world-python-repo
+          path: /bin/sh
+          args:
+            - -c
+            - mkdir -p /root/.local/lib/python3.6/site-packages  && cp -r dependencies/* /root/.local/lib/python3.6/site-packages && sh scripts.sh lint
+        inputs:
+          - name: hello-world-python-repo
+
+    - task: tests
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: python
+            tag: 3.6-alpine
+        run:
+          dir: hello-world-python-repo
+          path: /bin/sh
+          args:
+            - -c
+            - mkdir -p /root/.local/lib/python3.6/site-packages && cp -r dependencies/* /root/.local/lib/python3.6/site-packages && sh scripts.sh all_tests
+        inputs:
+          - name: hello-world-python-repo
+
+- name: build
+  plan:
+    - get: hello-world-python-repo
+      passed: [tests-and-lint]
+    - task: build
+      params:
+        GCP_SA: ((GCP_SA))
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: python
+            tag: 3.6-alpine
+        run:
+          dir: hello-world-python-repo
+          path: /bin/sh
+          args:
+            - -c
+            - ./scripts.sh gcr_build
+            # - mkdir -p /root/.local/lib/python3.6/site-packages && cp -r dependencies/* /root/.local/lib/python3.6/site-packages && sh scripts.sh all_tests
+        inputs:
+          - name: hello-world-python-repo
+
+
+
+    # - task: unit-test-walkingskeleton
+    #   paramsms:
+    #     ARTIFACTORY_PASSWORD: ((artifactory_password))
+    #     ARTIFACTORY_USERNAME: ((artifactory_username))
+    #     GRADLE_USER_HOME: /tmp/build/.gradle
+    #   timeout: 10m
+    #   config:
+    #     caches:
+    #     - path: ../.gradle/caches
+    #     - path: ../.gradle/wrapper
+    #     platform: linux
+    #     image_resource:
+    #       type: docker-image
+    #       source:
+    #         repository: openjdk
+    #         tag: 8-jdk
+    #     run:
+    #       dir: walkingskeleton-repo
+    #       path: /bin/sh
+    #       args:
+    #         - -ec
+    #         - ./gradlew unitTest
+    #     inputs:
+    #     - name: walkingskeleton-repo
+    #     outputs:
+    #     - name: ../.gradle/caches
+    #     - name: ../.gradle/wrapper
+
+    # - task: integration-test-walkingskeleton
+    #   params:
+    #     GRADLE_USER_HOME: /tmp/build/.gradle
+    #   timeout: 10m
+    #   config:
+    #     platform: linux
+    #     image_resource:
+    #       type: docker-image
+    #       source:
+    #         repository: openjdk
+    #         tag: 8-jdk
+    #     run:
+    #       dir: walkingskeleton-repo
+    #       path: /bin/sh
+    #       args:
+    #         - -ec
+    #         - ./gradlew cleanIntegrationTest integrationTest
+    #     inputs:
+    #     - name: walkingskeleton-repo
+    #     - name: ../.gradle/caches
+    #     - name: ../.gradle/wrapper
+
+    # - task: build-walkingskeleton-jar
+    #   params:
+    #     GRADLE_USER_HOME: /tmp/build/.gradle
+    #   timeout: 10m
+    #   config:
+    #     platform: linux
+    #     image_resource:
+    #       type: docker-image
+    #       source:
+    #         repository: openjdk
+    #         tag: 8-jdk
+    #     run:
+    #       dir: walkingskeleton-repo
+    #       path: /bin/sh
+    #       args:
+    #         - -exc
+    #         - ./gradlew assemble
+    #     inputs:
+    #       - name: walkingskeleton-repo
+    #       - name: ../.gradle/caches
+    #       - name: ../.gradle/wrapper
+    #     outputs:
+    #       - name: walkingskeleton-repo
+
+    # - put: repo-image
+    #   params:
+    #     build: walkingskeleton-repo
+    #     dockerfile: walkingskeleton-repo/ci/docker/Dockerfile.runner
