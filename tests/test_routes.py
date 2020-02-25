@@ -14,12 +14,17 @@ def test_hello_world(client, word, expected):
     response = client.get(url)
     assert expected in str(response.data)
 
+
 @pytest.mark.parametrize('ticket_json, expected_data, expected_status', [
     [
-        json_loader('create_ticket.json'), {"result": "fake result", "status": "ok"}, 201
+        json_loader('create_ticket.json'),
+        {"result": "fake result", "status": "ok"},
+        201,
     ],
     [
-        json_loader('create_ticket_missing_title.json'), {"error":"{'title': ['Missing data for required field.']}"}, 406
+        json_loader('create_ticket_missing_title.json'),
+        {"error": "{'title': ['Missing data for required field.']}"},
+        406,
     ],
 ])
 def test_ticket_create(client, ticket_json, expected_data, expected_status):
